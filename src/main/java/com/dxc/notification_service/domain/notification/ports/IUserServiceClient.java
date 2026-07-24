@@ -4,6 +4,8 @@ public interface IUserServiceClient {
 
     UserInfo getUserById(String userId);
 
+    String getCampusIdByUserId(String userId);   // ← nouveau
+
     record UserInfo(
             String id,
             String email,

@@ -27,7 +27,7 @@ public class NovuSubscriberManager implements ISubscriberManager {
     public void upsertSubscriber(String subscriberId, String email,
                                  String firstName, String lastName) {
         try {
-            // ✅ URL sans l'ID dans le chemin
+
             String url = novuApiUrl + "/v1/subscribers";
 
             Map<String, Object> body = Map.of(
@@ -44,7 +44,7 @@ public class NovuSubscriberManager implements ISubscriberManager {
             HttpEntity<Map<String, Object>> request =
                     new HttpEntity<>(body, headers);
 
-            // ✅ POST sans l'ID dans l'URL
+
             restTemplate.postForEntity(url, request, String.class);
 
             log.info("Subscriber Novu OK: {} — {}", subscriberId, email);

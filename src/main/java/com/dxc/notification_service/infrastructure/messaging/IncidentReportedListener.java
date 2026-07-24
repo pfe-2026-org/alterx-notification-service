@@ -16,7 +16,7 @@ public class IncidentReportedListener {
     private final OnIncidentReportedHandler handler;
     private final ObjectMapper objectMapper;
 
-    @KafkaListener(topics = "incident.reported",
+    @KafkaListener(topics = "incident.reported.v1",
             groupId = "notification-service-group")
     public void listen(String rawPayload) {
         try {
