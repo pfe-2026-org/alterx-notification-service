@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 @FeignClient(
         name = "user-service",
-        url = "${user-service.url}",
-        configuration = FeignConfig.class
+        url = "${feign.clients.user-service.url}",
+        configuration = UserServiceFeignConfig.class
 )
 public interface UserServiceFeignClient {
 
