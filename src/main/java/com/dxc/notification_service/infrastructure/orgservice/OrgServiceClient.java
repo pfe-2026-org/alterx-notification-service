@@ -5,8 +5,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -18,9 +18,16 @@ public class OrgServiceClient implements IOrgServiceClient {
     @Override
     public List<String> getUserIdsByCampusAndRole(String campusId, String role) {
         try {
-            var users = orgServiceFeignClient.getUsersByCampusAndRole(campusId, role);
-            if (users == null) return List.of();
-            return Arrays.stream(users).map(OrgServiceFeignClient.OrgUser::userId).toList();
+            UUID campusUuid = UUID.fromString(campusId);
+            var response = orgServiceFeignClient.getUsersByCampusAndRole(campusUuid, role.toUpperCase());
+            if (response == null || response.content() == null) return List.of();
+            return response.content().stream()
+                    .map(OrgServiceFeignClient.OrgUser::id)
+                    .map(UUID::toString)
+                    .toList();
+        } catch (IllegalArgumentException e) {
+            log.error("campusId invalide (pas un UUID): {}", campusId);
+            return List.of();
         } catch (Exception e) {
             log.error("Erreur org-service campus {} role {}: {}", campusId, role, e.getMessage());
             return List.of();

@@ -1,8 +1,5 @@
 spring:
-  datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5434}/${DB_NAME:notification_db}
-    username: ${DB_USER:changetrack}
-    password: ${DB_PASSWORD:changetrack123}
+
 
   security:
     oauth2:
