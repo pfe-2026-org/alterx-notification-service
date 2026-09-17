@@ -23,6 +23,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  DOCKER_BUILD_RECORD_UPLOAD: "false"
   REGISTRY: ghcr.io
   IMAGE_NAME: pfe-2026-org/alterx-notification-service
   JAVA_VERSION: "21"
@@ -30,6 +31,7 @@ env:
 jobs:
   test:
     name: Build & Test
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -49,19 +51,12 @@ jobs:
 
       - name: Upload test results
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: target/surefire-reports/
           retention-days: 7
-
-      - name: Upload verified application JAR
-        uses: actions/upload-artifact@v4
-        with:
-          name: application-jar
-          path: target/*.jar
-          if-no-files-found: error
-          retention-days: 1
 
   security-scan:
     name: Security Scan
@@ -97,6 +92,7 @@ jobs:
 
       - name: Upload Trivy Report as Artifact
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: trivy-security-report
@@ -105,7 +101,7 @@ jobs:
 
   build-and-push:
     name: Build, Scan & Push Image
-    needs: [test, security-scan]
+    needs: [security-scan]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
@@ -120,11 +116,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download verified application JAR
-        uses: actions/download-artifact@v5
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
         with:
-          name: application-jar
-          path: target
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Build and test
+        run: ./mvnw -B verify --no-transfer-progress
+
+      - name: Upload test results
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: target/surefire-reports/
+          retention-days: 7
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -175,6 +184,7 @@ jobs:
 
       - name: Upload Trivy Image Report as Artifact
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: trivy-image-report
@@ -200,16 +210,18 @@ jobs:
       - name: Syft — generate SBOM
         uses: anchore/sbom-action@v0.20.0
         with:
+          upload-artifact: false
           file: /tmp/image.tar
           format: cyclonedx-json
           output-file: sbom.cyclonedx.json
 
       - name: Upload SBOM artifact
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: sbom
           path: sbom.cyclonedx.json
-          retention-days: 90
+          retention-days: 7
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3.8.2
